@@ -1,3 +1,5 @@
+from PIL import Image
+
 def valid_input(image_size: tuple[int, int], tile_size: tuple[int, int], ordering: list[int]) -> bool:
     """
     Return True if the given input allows the rearrangement of the image, False otherwise.
@@ -19,7 +21,6 @@ def valid_input(image_size: tuple[int, int], tile_size: tuple[int, int], orderin
     return True
 
 
-
 def rearrange_tiles(image_path: str, tile_size: tuple[int, int], ordering: list[int], out_path: str) -> None:
     """
     Rearrange the image.
@@ -31,9 +32,22 @@ def rearrange_tiles(image_path: str, tile_size: tuple[int, int], ordering: list[
     once. If these conditions do not hold, raise a ValueError with the message:
     "The tile size or ordering are not valid for the given image".
     """
-    pass
+    img = Image.open(image_path)
 
-image_size = [256, 256]
-tile_size = [128, 128]
-order = [1, 2, 3, 4]
-print(valid_input(image_size, tile_size, order))
+    if not valid_input(img.size, tile_size, ordering):
+        raise ValueError("The tile size or ordering are not valid for the given image")
+
+    n_rows = img.size[1] // tile_size[1]
+    n_cols = img.size[0] // tile_size[0]
+
+    canvas = Image.new(img.mode, img.size)
+    for i, target in enumerate(ordering):
+        in_col = (i % n_cols) * tile_size[0]
+        in_row = (i // n_cols) * tile_size[1]
+        target_col = (target % n_cols) * tile_size[0]
+        target_row = (target // n_cols) * tile_size[1]
+
+        tile = img.crop((target_col, target_row, target_col+tile_size[0], target_row+tile_size[1]))
+        canvas.paste(tile, (in_col, in_row))
+
+    canvas.save(out_path)
